@@ -1,8 +1,10 @@
 name: 'Publish application'
-on: push
+on: 
+  push:
+    branches: [ master ]
 
 jobs:
-  build:
+  deploy-to-github-pages:
     runs-on: ubuntu-latest
     steps:
         # Checkout the code
@@ -17,18 +19,12 @@ jobs:
 
         # Generate the website
         - name: Publish
-          run: dotnet publish CyberPunkTimer.csproj --configuration Release
+          run: dotnet publish CyberPunkTimer.csproj -c Release -o release --nologo
 
         # Publish the website
-        - name: GitHub Pages action
-          if: ${{ github.ref == 'refs/heads/master' }} # Publish only when the push is on master
-          uses: peaceiris/actions-gh-pages@v3.6.1
+        - name: Commit wwwroot to GitHub Pages
+          uses: JamesIves/github-pages-deploy-action@3.7.1
           with:
             github_token: ${{ secrets.PUBLISH_TOKEN }}
-            publish_branch: main
-            publish_dir: bin/Release/netstandard2.1/publish/wwwroot
-            allow_empty_commit: false
-            keep_files: false
-            force_orphan: true
-            # TODO uncomment the following line if you have a custom domain name
-            # cname: demo.meziantou.net
+            publish_branch: gh-pages
+            publish_dir: release/wwwroot
