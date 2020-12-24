@@ -30,22 +30,26 @@ namespace CyberPunkTimer.Models
         }
         public string FormatDelta()
         {
+            if(SecondElapse+MinuteElapse+HourElapse == 0)
+            {
+                return "";
+            }
             return FormatTime(HourDelta, MinuteDelta, SecondDelta);
         }
-        public void Increment()
+        public void Increment(int seconds)
         {
 
-            SecondElapse += 1;
+            SecondElapse += seconds;
 
-            if (SecondElapse == 60)
+            if (SecondElapse >= 60)
             {
-                MinuteElapse += 1;
-                SecondElapse = 0;
+                MinuteElapse += (SecondElapse/60);
+                SecondElapse = SecondElapse % 60;
             }
-            if (MinuteElapse == 60)
+            if (MinuteElapse >= 60)
             {
-                MinuteElapse = 0;
-                HourElapse += 1;
+                HourElapse += (MinuteElapse / 60);
+                MinuteElapse = MinuteElapse % 60;
             }
             UpdateDelta();
 

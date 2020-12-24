@@ -35,11 +35,12 @@
                                                 <input class="inputname" type="text" @bind-value="splits[index].Name" />
                                             </td>
                                             <td class="widthcol">@splits[index].FormatActualTime()</td>
-                                            <td class="@(splits[index].DeltaSign ? "deltagreen":"deltared" +" widthcol") "> @splits[index].FormatDelta()</td>
+                                            <td class="text-align-end"> <input class="inputnum" type="number" min="0" step="1" @bind-value="splits[index].HourEstimated" />:</td>
                                             <td class="widthcollong"><input class="inputnum" type="number" min="0" step="1" @bind-value="splits[index].MinuteEstimated" />:<input class="inputnum" type="number" min="0" step="1" @bind-value="splits[index].SecondEstimated" /></td>
                                             <td>
                                                 @if (index == splitIndex && aTimer.Enabled)
                                                 {
+                                                    <button class="smallgreenbutton" @onclick="ToggleTimer">[Pau]</button>
                                                 }
                                                 else
                                                 {
@@ -109,8 +110,8 @@
 
     List<SplitModel> splits = new List<SplitModel>();
     SplitModel total = new SplitModel();
-    int mainTimer = 0;
     int splitIndex = 0;
+    DateTime oldTime = DateTime.UtcNow;
     protected override void OnInitialized()
     {
         base.OnInitialized();
@@ -122,7 +123,7 @@
         CalculateTotalEstimation();
 
 
-        aTimer = new System.Timers.Timer(100);
+        aTimer = new System.Timers.Timer(1000);
         // Hook up the Elapsed event for the timer.
         aTimer.Elapsed += OnTimedEvent;
         aTimer.AutoReset = true;
@@ -136,40 +137,51 @@
 
     private void IncrementTime()
     {
+        DateTime newTime = DateTime.UtcNow;
+        int seconds = Convert.ToInt32((newTime - oldTime).TotalSeconds);
+
+        if (seconds < 1)
+        {
+            seconds = 1;
+        }
         if (splits.Count == 0)
         {
             // all splits deleted, so stop timer and break
-            aTimer.Stop();
+            if (aTimer.Enabled)
+            {
+                ToggleTimer();
+            }
             return;
         }
-        mainTimer += 1;
-        if (mainTimer == 10)
-        {
-            total.Increment();
-            splits[splitIndex].Increment();
-            mainTimer = 0;
 
-        }
-
+        total.Increment(seconds);
+        splits[splitIndex].Increment(seconds);
+        oldTime = newTime;
         StateHasChanged();
     }
     private void Reset()
     {
-        aTimer.Stop();
+        if (aTimer.Enabled)
+        {
+            ToggleTimer();
+        }
         splitIndex = 0;
         total.ResetSplit();
         splits.ForEach(n => n.ResetSplit());
     }
     private void SetSplit(int i)
     {
-        aTimer.Enabled = true;
+        if (!aTimer.Enabled)
+        {
+            ToggleTimer();
+        }
         splitIndex = i;
     }
     private void NextSplit()
     {
         if (!aTimer.Enabled)
         {
-            aTimer.Enabled = true;
+            ToggleTimer();
         }
         else if (splitIndex + 1 < splits.Count)
         {
@@ -178,6 +190,11 @@
     }
     private void ToggleTimer()
     {
+        //timer being turned on, reset the oldTime to now
+        if (!aTimer.Enabled)
+        {
+            oldTime = DateTime.UtcNow;
+        }
         aTimer.Enabled = !aTimer.Enabled;
         if (!aTimer.Enabled)
         {
@@ -202,7 +219,10 @@
     {
         if (index == splitIndex)
         {
-            aTimer.Enabled = false;
+            if (aTimer.Enabled)
+            {
+                ToggleTimer();
+            }
             splitIndex = 0;
         }
         else if (index < splitIndex)

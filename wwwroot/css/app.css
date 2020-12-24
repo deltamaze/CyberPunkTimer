@@ -89,6 +89,10 @@ html, body {
     font-size: 5px;
 }
 
+.text-align-end {
+    text-align:end;
+}
+
 .smallyellowbutton {
     height: 22.5px;
     width: 41px;
